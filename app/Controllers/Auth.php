@@ -103,13 +103,14 @@ class Auth extends BaseController
 		$token = $this->request->getGet('token');
 
 		$userModel = new UserModel();
-		$row = $userModel->where(['email' => $email])->first();
+		$user = $userModel->where(['email' => $email])->first();
 
-		if ($row->token == $token) {
-			$userModel->save([
-				'id'	=> $row['id'],
-				'is_active' => 1
-			]);
+		if ($user->token == $token) {
+			$user =
+				$userModel->save([
+					'id'	=> $user->id,
+					'is_active' => 1
+				]);
 		}
 
 		session()->setFlashdata('success', 'Akun anda telah di aktivasi. Silahkan login');
