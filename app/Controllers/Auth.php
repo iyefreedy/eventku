@@ -32,14 +32,16 @@ class Auth extends BaseController
 					return redirect()->to('/auth')->withInput();
 				} else {
 
-					if (!password_verify($input['password'], $user['password'])) {
+					if (!password_verify($input['password'], $user->password)) {
 						session()->setFlashdata('error', 'Password salah');
 						return redirect()->to('/auth')->withInput();
 					} else {
 
-						if ($user['is_active'] == 0) {
+						if ($user->is_active == 0) {
 							session()->setFlashdata('error', 'Email belum di aktivasi. Lakukan aktivasi terlebih dahulu');
 							return redirect()->to('/auth')->withInput();
+						} else {
+							return redirect()->to('/user');
 						}
 					}
 				}
@@ -81,8 +83,7 @@ class Auth extends BaseController
 				$reg = $userModel->save($user);
 
 				if ($reg) {
-					session()->setFlashdata('success', 'Berhasil mendaftar. Silahkan cek email untuk melakukan verifikasi.');
-					return redirect()->to('/auth')->withInput();
+					$this->_sendMail($input['email'], $token);
 				} else {
 					return redirect()->to('/auth/register')->withInput();
 				}
@@ -96,6 +97,52 @@ class Auth extends BaseController
 		return view('auth/forgotpassword');
 	}
 
+	public function verify()
+	{
+		$email = $this->request->getGet('email');
+		$token = $this->request->getGet('token');
+
+		$userModel = new UserModel();
+		$row = $userModel->where(['email' => $email])->first();
+
+		if ($row->token == $token) {
+			$userModel->save([
+				'id'	=> $row['id'],
+				'is_active' => 1
+			]);
+		}
+
+		session()->setFlashdata('success', 'Akun anda telah di aktivasi. Silahkan login');
+		return redirect()->to('/auth')->withInput();
+	}
+
 	//--------------------------------------------------------------------
 
+	private function _sendMail($user, $token)
+	{
+
+		$config['protocol'] = 'smtp';
+		$config['SMTPHost'] = 'smtp.gmail.com';
+		$config['SMTPUser'] = 'quraisy2104@gmail.com';
+		$config['SMTPPass'] = 'iye83616766';
+		$config['SMTPPort'] = 465;
+		$config['SMTPCrypto'] = 'ssl';
+		$config['mailType'] = 'html';
+
+		$email = \Config\Services::email();
+		$email->initialize($config);
+		$body = 'Click this link to verify your account : <a href="' . base_url() . '/auth/verify?email=' . $user . '&token=' . urlencode($token) . '">Activation</a>';
+
+		$email->setFrom('quraisy2104@gmail.com', 'Eventku');
+		$email->setTo($user);
+		$email->setSubject('Activation');
+		$email->setMessage($body);
+
+		if ($email->send()) {
+			session()->setFlashdata('success', 'Berhasil mendaftar. Silahkan cek email untuk melakukan verifikasi.');
+			return redirect()->to('/auth')->withInput();
+		} else {
+			echo $email->printDebugger();
+		}
+	}
 }

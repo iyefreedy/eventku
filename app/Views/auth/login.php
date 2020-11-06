@@ -19,11 +19,11 @@
                                     <h1 class="h4 text-gray-900 mb-4">Welcome Back!</h1>
                                 </div>
                                 <?php if (session()->getFlashdata('error')) : ?>
-                                    <div class="alert alert-danger" role="alert">
+                                    <div class="alert alert-danger text-center" role="alert">
                                         <?= session()->getFlashdata('error') ?>
                                     </div>
                                 <?php elseif (session()->getFlashdata('success')) : ?>
-                                    <div class="alert alert-success" role="alert">
+                                    <div class="alert alert-success text-center" role="alert">
                                         <?= session()->getFlashdata('success') ?>
                                     </div>
                                 <?php endif; ?>
