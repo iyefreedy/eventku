@@ -6,7 +6,7 @@ use App\Models\UserModel as UserModel;
 
 class Auth extends BaseController
 {
-	public function index()
+	public function login()
 	{
 		$data = [
 			'title' => 'Login | Eventku',
@@ -21,29 +21,36 @@ class Auth extends BaseController
 			];
 
 			if (!$this->validator->run($input, 'login')) {
-				return redirect()->to('/auth')->withInput();
+				return redirect()->to('/auth/login')->withInput();
 			} else {
-
+				$email = $this->request->getPost('email');
+				$password = $this->request->getPost('password');
 				$userModel = new UserModel();
-				$user = $userModel->where(['email' => $input['email']])->first();
+				$user = $userModel->where(['email' => $email])->first();
+				$user = $user->toArray();
 
-				if (!$user) {
-					session()->setFlashdata('error', 'Email belum terdaftar');
-					return redirect()->to('/auth')->withInput();
-				} else {
+				if ($user) {
 
-					if (!password_verify($input['password'], $user->password)) {
+					if (!password_verify($password, $user['password'])) {
 						session()->setFlashdata('error', 'Password salah');
-						return redirect()->to('/auth')->withInput();
+						return redirect()->to('/auth/login')->withInput();
 					} else {
-
-						if ($user->is_active == 0) {
-							session()->setFlashdata('error', 'Email belum di aktivasi. Lakukan aktivasi terlebih dahulu');
-							return redirect()->to('/auth')->withInput();
+						if ($user['is_active'] == 0) {
+							session()->setFlashdata('error', 'Email belum di aktivasi');
+							return redirect()->to('/auth/login')->withInput();
 						} else {
+							$data = [
+								'logged_in'	=> true,
+								'email' => $email,
+								'role_id' => $user['role_id']
+							];
+							session()->set($data);
 							return redirect()->to('/user');
 						}
 					}
+				} else {
+					session()->setFlashdata('error', 'Email belum terdaftar');
+					return redirect()->to('/auth/login')->withInput();
 				}
 			}
 		}
@@ -84,8 +91,8 @@ class Auth extends BaseController
 
 				if ($reg) {
 					$this->_sendMail($input['email'], $token);
-				} else {
-					return redirect()->to('/auth/register')->withInput();
+					session()->setFlashdata('success', 'Berhasil mendaftar. Silahkan cek email untuk melakukan verifikasi.');
+					return redirect()->to('/auth/login')->withInput();
 				}
 			}
 		}
@@ -94,7 +101,29 @@ class Auth extends BaseController
 
 	public function forgotpassword()
 	{
-		return view('auth/forgotpassword');
+		$data = [
+			'title' => 'Lupa Password | Eventku'
+		];
+
+		if ($this->request->getPost()) {
+			$email = $this->request->getPost('email');
+
+			$userModel = new UserModel();
+			$user = $userModel->where(['email' => $email, 'is_active' => 1])->first();
+
+			if ($user) {
+				$token = base64_encode(random_bytes(32));
+				$user->token = $token;
+				$userModel->save($user);
+
+				$this->_sendMail($user->email, $user->token, 'forgotpassword');
+			} else {
+				session()->setFlashdata('error', 'Email belom terdaftar atau di aktivasi!');
+				return redirect()->to('/auth/forgotpassword')->withInput();
+			}
+		}
+
+		return view('auth/forgot_password', $data);
 	}
 
 	public function verify()
@@ -114,12 +143,19 @@ class Auth extends BaseController
 		}
 
 		session()->setFlashdata('success', 'Akun anda telah di aktivasi. Silahkan login');
-		return redirect()->to('/auth')->withInput();
+		return redirect()->to('/auth/login')->withInput();
+	}
+
+	public function logout()
+	{
+		$this->session->destroy();
+		return redirect()->to('/auth/login');
 	}
 
 	//--------------------------------------------------------------------
 
-	private function _sendMail($user, $token)
+
+	private function _sendMail($user, $token, $type)
 	{
 
 		$config['protocol'] = 'smtp';
@@ -132,18 +168,26 @@ class Auth extends BaseController
 
 		$email = \Config\Services::email();
 		$email->initialize($config);
-		$body = 'Click this link to verify your account : <a href="' . base_url() . '/auth/verify?email=' . $user . '&token=' . urlencode($token) . '">Activation</a>';
+		$bodyAcitvate = 'Click this link to verify your account : <a href="' . base_url() . '/auth/verify?email=' . $user . '&token=' . urlencode($token) . '">Activation</a>';
+		$bodyForgotPassword = 'Click this link to reset your password : <a href="' . base_url() . '/auth/verify?email=' . $user . '&token=' . urlencode($token) . '">Activation</a>';
 
-		$email->setFrom('quraisy2104@gmail.com', 'Eventku');
-		$email->setTo($user);
-		$email->setSubject('Activation');
-		$email->setMessage($body);
+		if ($type == 'verify') {
 
-		if ($email->send()) {
-			session()->setFlashdata('success', 'Berhasil mendaftar. Silahkan cek email untuk melakukan verifikasi.');
-			return redirect()->to('/auth')->withInput();
-		} else {
-			echo $email->printDebugger();
+			$email->setFrom('quraisy2104@gmail.com', 'Eventku');
+			$email->setTo($user);
+			$email->setSubject('Activation');
+			$email->setMessage($bodyAcitvate);
+		} elseif ($type == 'forgotpassword') {
+
+			$email->setFrom('quraisy2104@gmail.com', 'Eventku');
+			$email->setTo($user);
+			$email->setSubject('Activation');
+			$email->setMessage($bodyForgotPassword);
+		}
+
+
+		if (!$email->send()) {
+			dd($email->printDebugger());
 		}
 	}
 }

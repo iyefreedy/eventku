@@ -27,7 +27,7 @@
                                         <?= session()->getFlashdata('success') ?>
                                     </div>
                                 <?php endif; ?>
-                                <form class="user" method="POST" action="/auth">
+                                <form class="user" method="POST" action="/auth/login">
                                     <div class="form-group">
                                         <input type="text" class="form-control form-control-user <?= ($validation->hasError('email')) ? 'is-invalid' : ''; ?>" id="email" name="email" placeholder="Enter Email Address...">
                                         <div class="invalid-feedback">
@@ -50,7 +50,7 @@
                                 </form>
                                 <hr>
                                 <div class="text-center">
-                                    <a class="small" href="forgot-password.html">Forgot Password?</a>
+                                    <a class="small" href="/auth/forgotpassword">Forgot Password?</a>
                                 </div>
                                 <div class="text-center">
                                     <a class="small" href="/auth/register">Create an Account!</a>
