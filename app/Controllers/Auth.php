@@ -27,10 +27,11 @@ class Auth extends BaseController
 				$password = $this->request->getPost('password');
 				$userModel = new UserModel();
 				$user = $userModel->where(['email' => $email])->first();
-				$user = $user->toArray();
+
 
 				if ($user) {
 
+					$user = $user->toArray();
 					if (!password_verify($password, $user['password'])) {
 						session()->setFlashdata('error', 'Password salah');
 						return redirect()->to('/auth/login')->withInput();
@@ -90,7 +91,7 @@ class Auth extends BaseController
 				$reg = $userModel->save($user);
 
 				if ($reg) {
-					$this->_sendMail($input['email'], $token);
+					$this->_sendMail($input['email'], $token, 'verify');
 					session()->setFlashdata('success', 'Berhasil mendaftar. Silahkan cek email untuk melakukan verifikasi.');
 					return redirect()->to('/auth/login')->withInput();
 				}
@@ -106,24 +107,90 @@ class Auth extends BaseController
 		];
 
 		if ($this->request->getPost()) {
-			$email = $this->request->getPost('email');
+			$input = [
+				'email'	=> $this->request->getPost('email')
+			];
 
-			$userModel = new UserModel();
-			$user = $userModel->where(['email' => $email, 'is_active' => 1])->first();
-
-			if ($user) {
-				$token = base64_encode(random_bytes(32));
-				$user->token = $token;
-				$userModel->save($user);
-
-				$this->_sendMail($user->email, $user->token, 'forgotpassword');
-			} else {
-				session()->setFlashdata('error', 'Email belom terdaftar atau di aktivasi!');
+			if (!$this->validator->run($input, 'forgotpassword')) {
 				return redirect()->to('/auth/forgotpassword')->withInput();
+			} else {
+
+				$email = $this->request->getPost('email');
+				$userModel = new UserModel();
+				$user = $userModel->where(['email' => $email, 'is_active' => 1])->first();
+
+				if ($user) {
+					$token = base64_encode(random_bytes(32));
+					$user->token = $token;
+					$userModel->save($user);
+
+					$this->_sendMail($user->email, $user->token, 'forgotpassword');
+
+					session()->setFlashdata('success', 'Silahkan cek email anda. Dan klik link untuk reset password');
+					return redirect()->to('/auth/login')->withInput();
+				} else {
+					session()->setFlashdata('error', 'Email belom terdaftar atau di aktivasi!');
+					return redirect()->to('/auth/forgotpassword')->withInput();
+				}
 			}
 		}
 
 		return view('auth/forgot_password', $data);
+	}
+
+	public function resetpassword()
+	{
+		$email = $this->request->getGet('email');
+		$token = $this->request->getGet('token');
+
+		$userModel = new UserModel();
+		$user = $userModel->where(['email' => $email, 'token' => $token])->first();
+		if ($user) {
+			session()->set(['id' => $user->id, 'email' => $user->email]);
+			return redirect()->to('/auth/updatepassword');
+		} else {
+			session()->setFlashdata('error', 'Email atau token tidak valid');
+			return redirect()->to('/auth/login')->withInput();
+		}
+	}
+
+
+	public function updatepassword()
+	{
+		if (!session()->has('email')) {
+			session()->setFlashdata('error', 'Masukkan email anda');
+			return redirect()->to('/auth/forgotpassword')->withInput();
+		}
+
+		$data = [
+			'title' => 'Reset Password | Eventku',
+			'validation' => $this->validator
+		];
+
+		if ($this->request->getPost()) {
+			$input = [
+				'password' => $this->request->getPost('password'),
+				'confirmpassword'	=> $this->request->getPost('confirmpassword')
+			];
+
+			if ($this->validator->run($input, 'resetpassword')) {
+				$userModel = new UserModel();
+				$id = session()->get('id');
+				$password = $this->request->getPost('password');
+				$user = $userModel->find($id);
+				$user->password = $password;
+
+				$userModel->update($user->id, ['password' => $user->password]);
+				session()->destroy();
+				session()->setFlashdata('success', 'Berhasil reset password');
+				return redirect()->to('/auth/login')->withInput();
+			} else {
+				return redirect()->to('/auth/updatepassword')->withInput();
+			}
+		}
+
+
+		return view('auth/reset_password', $data);
 	}
 
 	public function verify()
@@ -148,7 +215,8 @@ class Auth extends BaseController
 
 	public function logout()
 	{
-		$this->session->destroy();
+		dd(session()->get());
+		session()->destroy();
 		return redirect()->to('/auth/login');
 	}
 
@@ -169,7 +237,7 @@ class Auth extends BaseController
 		$email = \Config\Services::email();
 		$email->initialize($config);
 		$bodyAcitvate = 'Click this link to verify your account : <a href="' . base_url() . '/auth/verify?email=' . $user . '&token=' . urlencode($token) . '">Activation</a>';
-		$bodyForgotPassword = 'Click this link to reset your password : <a href="' . base_url() . '/auth/verify?email=' . $user . '&token=' . urlencode($token) . '">Activation</a>';
+		$bodyForgotPassword = 'Click this link to reset your password : <a href="' . base_url() . '/auth/resetpassword?email=' . $user . '&token=' . urlencode($token) . '">Activation</a>';
 
 		if ($type == 'verify') {
 
@@ -181,7 +249,7 @@ class Auth extends BaseController
 
 			$email->setFrom('quraisy2104@gmail.com', 'Eventku');
 			$email->setTo($user);
-			$email->setSubject('Activation');
+			$email->setSubject('Forfot Password');
 			$email->setMessage($bodyForgotPassword);
 		}
 

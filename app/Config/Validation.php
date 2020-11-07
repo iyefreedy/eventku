@@ -82,4 +82,27 @@ class Validation
 			]
 		]
 	];
+
+	public $resetpassword = [
+		'password' => [
+			'label' => 'Password',
+			'rules' => 'required|trim|matches[confirmpassword]|min_length[3]',
+			'errors' => [
+				'required'	=> '{field} tidak boleh kosong',
+				'matches'	=> '{field} tidak sama dengan Konfirmasi Password',
+				'min_length' => '{field} tidak boleh kurang dari 3 karakter'
+			]
+		]
+	];
+
+	public $forgotpassword = [
+		'email' => [
+			'label' => 'Email',
+			'rules'	=> 'required|valid_email|trim',
+			'errors' => [
+				'required' => '{field} tidak boleh kosong',
+				'valid_email' => '{field} tidak valid'
+			]
+		]
+	];
 }

@@ -16,21 +16,21 @@
                         <div class="col-lg">
                             <div class="p-5">
                                 <div class="text-center">
-                                    <h1 class="h4 text-gray-900 mb-2">Forgot Your Password?</h1>
-                                    <?php if (session()->getFlashdata('error')) : ?>
-                                        <div class="alert alert-danger text-center" role="alert">
-                                            <?= session()->getFlashdata('error') ?>
-                                        </div>
-                                    <?php elseif (session()->getFlashdata('success')) : ?>
-                                        <div class="alert alert-success text-center" role="alert">
-                                            <?= session()->getFlashdata('success') ?>
-                                        </div>
-                                    <?php endif; ?>
-                                    <p class="mb-4">We get it, stuff happens. Just enter your email address below and we'll send you a link to reset your password!</p>
+                                    <h1 class="h4 text-gray-900 mb-4">Reset Password</h1>
                                 </div>
-                                <form class="user" method="POST" action="/auth/forgotpassword">
+                                <div class="alert alert-success text-center" role="alert">
+                                    Reset password for <?= session()->get('email'); ?>
+                                </div>
+                                <form class="user" method="POST" action="/auth/updatepassword">
                                     <div class="form-group">
-                                        <input type="email" class="form-control form-control-user" id="email" name="email" placeholder="Enter Email Address...">
+                                        <input type="password" class="form-control form-control-user <?= ($validation->hasError('password')) ? 'is-invalid' : ''; ?>" id="password" name="password" placeholder="New Password">
+                                        <div class="invalid-feedback">
+                                            <?= $validation->getError('password'); ?>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <input type="password" class="form-control form-control-user" id="confirmpassword" name="confirmpassword" placeholder="Confirm Password">
                                     </div>
                                     <button type="submit" class="btn btn-primary btn-block col-lg">Reset Password</button>
                                 </form>
@@ -50,7 +50,6 @@
         </div>
 
     </div>
-
 </div>
 
 <?= $this->endSection(); ?>
