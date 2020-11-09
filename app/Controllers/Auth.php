@@ -210,13 +210,13 @@ class Auth extends BaseController
 		}
 
 		session()->setFlashdata('success', 'Akun anda telah di aktivasi. Silahkan login');
-		return redirect()->to('/auth/login')->withInput();
+		return redirect()->to('/auth/login');
 	}
 
 	public function logout()
 	{
-		dd(session()->get());
 		session()->destroy();
+		session()->setFlashdata('success', 'Anda telah logout');
 		return redirect()->to('/auth/login');
 	}
 

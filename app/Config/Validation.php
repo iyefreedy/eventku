@@ -105,4 +105,26 @@ class Validation
 			]
 		]
 	];
+
+	public $additem = [
+		'name' => [
+			'label' => 'Nama',
+			'rules'	=> 'requried|trim',
+			'errors' => [
+				'required'	=>	'{field} tidak boleh kosong'
+			]
+		],
+		'price'	=> [
+			'label'	=> 'Harga',
+			'rules'	=> 'required|numeric|trim',
+			'errors'	=> [
+				'required' => '{field} tidak boleh kosong',
+				'numeric'	=> '{field} tidak valid'
+			]
+		],
+		'description'	=> [
+			'label'		=> 'Deskripsi',
+			'rules'		=> 'required|min_length[25]|trim'
+		]
+	];
 }
