@@ -107,24 +107,38 @@ class Validation
 	];
 
 	public $additem = [
-		'name' => [
+		'name'			=> [
 			'label' => 'Nama',
-			'rules'	=> 'requried|trim',
+			'rules'	=> 'required|trim',
 			'errors' => [
 				'required'	=>	'{field} tidak boleh kosong'
 			]
 		],
-		'price'	=> [
-			'label'	=> 'Harga',
-			'rules'	=> 'required|numeric|trim',
-			'errors'	=> [
-				'required' => '{field} tidak boleh kosong',
-				'numeric'	=> '{field} tidak valid'
+		'price'					=> [
+			'label'				=> 'Harga',
+			'rules'				=> 'required|numeric|trim',
+			'errors'			=> [
+				'required'		=> '{field} tidak boleh kosong',
+				'numeric'		=> '{field} tidak valid'
 			]
 		],
-		'description'	=> [
-			'label'		=> 'Deskripsi',
-			'rules'		=> 'required|min_length[25]|trim'
+		'description'			=> [
+			'label'				=> 'Deskripsi',
+			'rules'				=> 'required|min_length[25]|trim',
+			'errors'			=> [
+				'required'		=> '{field} tidak boleh kosong',
+				'min_length'	=> '{field} tidak boleh pendek'
+			]
+		],
+		'image'					=> [
+			'label'				=> 'Gambar',
+			'rules'				=> 'uploaded[image]|max_size[image,2048]|is_image[image]|mime_in[image,image/jpg,image/jpeg,image/png]',
+			'errors'			=> [
+				'uploaded'		=> '{field} harus di upload',
+				'max_size'		=> '{field} terlalu besar',
+				'is_image'		=> '{field} bukan gambar',
+				'mime_in'		=> 'Ekstensi file tidak valid'
+			]
 		]
 	];
 }
